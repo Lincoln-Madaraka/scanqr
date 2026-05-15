@@ -6,8 +6,7 @@ A single-page mobile menu for **The Kenchic x Ngemi Experience**, built to be re
 
 ## Live site
 
-- Production: _https://&lt;your-domain&gt;_ <!-- update once domain is wired -->
-- GitHub Pages: <https://lincoln-madaraka.github.io/scanqr/>
+<http://scanthisqr.redgiant.co.ke/>
 
 ## What's in this repo
 
@@ -51,22 +50,24 @@ GitHub Pages redeploys automatically (about a minute).
 
 ## Deployment
 
-The site is hosted on **GitHub Pages** from the `main` branch.
+The site is hosted on **Red Giant** infrastructure at `scanthisqr.redgiant.co.ke`. It's a pure static site — `index.html`, `styles.css`, `manifest.webmanifest`, and the `assets/` folder are the only files the web server needs.
 
-1. Repo Settings → **Pages**
-2. Source: *Deploy from a branch*, Branch: `main`, Folder: `/ (root)`
-3. Custom domain: set it in the **Custom domain** field — GitHub will commit a `CNAME` file.
-4. DNS at your registrar:
-   - **Subdomain** (e.g. `menu.example.com`): `CNAME` → `lincoln-madaraka.github.io`
-   - **Apex** (e.g. `example.com`): four A records → `185.199.108.153`, `185.199.109.153`, `185.199.110.153`, `185.199.111.153`
-5. After DNS resolves (5–30 min), enable **Enforce HTTPS** in Pages settings.
+To deploy a new version, upload the working tree (excluding `source/` and `.git/`) to the server's web root, e.g.:
+
+```bash
+rsync -avz --delete \
+  --exclude '.git' --exclude 'source' --exclude '.DS_Store' \
+  /Users/lincoln/scanqr/  user@server:/var/www/scanthisqr/
+```
+
+Or zip and upload via cPanel / File Manager — same files, same result.
 
 ## QR code
 
 Generate a QR pointing at the live URL:
 
 ```
-https://<your-domain>/
+http://scanthisqr.redgiant.co.ke/
 ```
 
 Print it at restaurant-sized resolution — the page is already optimised for the phone that will scan it.
