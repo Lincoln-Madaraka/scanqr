@@ -1,0 +1,8 @@
+.DS_Store
+*.log
+node_modules/
+__pycache__/
+source/bands/
+source/q-*.png
+source/h-*.png
+source/menu-grid.png
