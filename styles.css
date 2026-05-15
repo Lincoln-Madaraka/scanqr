@@ -20,28 +20,35 @@ body {
   min-height: 100dvh;
   display: flex;
   justify-content: center;
+  align-items: center;
 }
 
+/* The menu fills the full viewport. The image is fitted (contain) inside it,
+   so the whole menu is always visible — the top of the image sits at the top
+   of the viewport, the bottom sits at the bottom. When the viewport aspect
+   doesn't match the image's 2:3 ratio, the leftover space is split evenly
+   (symmetrically) on either side of the image instead of dumping it all
+   at the bottom. */
 .menu {
-  width: 100%;
-  max-width: 600px;
-  background: white;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.menu picture,
+.menu picture {
+  display: flex;
+  max-width: 100%;
+  max-height: 100%;
+}
+
 .menu img {
   display: block;
-  width: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
   height: auto;
-}
-
-/* Desktop: cap the menu at a comfortable reading width and show the cream
-   background on the sides so it never stretches uncomfortably wide. */
-@media (min-width: 700px) {
-  .menu {
-    margin: 24px auto;
-    box-shadow: 0 8px 28px rgba(13, 46, 92, 0.15);
-    border-radius: 14px;
-    overflow: hidden;
-  }
+  object-fit: contain;
 }
