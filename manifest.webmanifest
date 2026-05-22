@@ -1,7 +1,7 @@
 {
-  "name": "Kenchic x Ngemi Experience",
-  "short_name": "Kenchic Menu",
-  "description": "Kenchic x Ngemi menu — Kuku Mfalme!",
+  "name": "Kenchic UCL Word Hunt",
+  "short_name": "UCL Hunt",
+  "description": "A Champions League word hunt by Kenchic. Find 6 football names in 30 seconds.",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#FFF8F2",

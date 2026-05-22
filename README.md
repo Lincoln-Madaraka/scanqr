@@ -1,30 +1,39 @@
-# scanqr — The Kenchic x Ngemi Experience
+# scanqr — Kenchic UCL Word Hunt
 
-A single-page mobile menu for **The Kenchic x Ngemi Experience**, built to be reached by scanning a QR code at the venue. Lightweight, fast, and renders identically on every phone.
-
-> 🐔 *Cîna Mûrio!!*
+A mobile-first **UEFA Champions League word-hunt** mini-game, dressed in the Kenchic brand. Built around the Arsenal vs PSG fixture but the puzzle pool spans the wider football world so players can run game after game without seeing repeats.
 
 ## Live site
 
 <http://scanthisqr.redgiant.co.ke/>
 
+## How the game plays
+
+- A category prompt appears at the top of every round (e.g. *"Find 6 Arsenal players"*, *"Find 6 Champions League winning clubs"*).
+- A 12 × 12 letter grid hides **6 valid answers** somewhere inside — horizontally, vertically, or diagonally, forward or backward.
+- Press-and-drag across letters in a straight line to commit a word. Correct → cells lock in **green**. Wrong → cells flash **red** and clear.
+- A **30-second** countdown ring runs in the corner and never pauses.
+- Find all 6 in time → "Champion!" modal, session score increments, *Next puzzle* loads a fresh one.
+- Time runs out → "Oopsie!" modal shows your score and a mini-grid with all 6 answers revealed.
+- Puzzles are procedurally generated, so the supply is effectively endless.
+
 ## What's in this repo
 
 | Path | What it is |
 |---|---|
-| `index.html` | The single page. Loads the menu image with proper meta tags. |
-| `styles.css` | Mobile-first CSS. Caps the layout at 600 px on phones and adds a soft shadow on desktop. |
-| `manifest.webmanifest` | PWA manifest — lets visitors "Add to Home Screen" with the Kenchic icon. |
-| `assets/menu.jpg` + `assets/menu.webp` | The menu image. WebP is served to modern browsers, JPG is the fallback. |
-| `assets/favicon-*.png`, `icon-*.png`, `apple-touch-icon.png` | Full favicon set generated from the Kuku Mfalme badge. |
-| `assets/og-image.jpg` | 1200 × 630 share-card image used by WhatsApp, Twitter, iMessage, Slack, etc. |
-| `source/` | Original full-resolution menu image + the Python scripts used to generate everything in `assets/`. |
+| `index.html` | Game shell — header, prompt + timer, grid container, modal. Inline SVG icons (no emoji). |
+| `styles.css` | Layout (upper-3/4 play area, lower-1/4 score strip), cell states, modal styling, Kenchic palette. |
+| `app.js` | Game logic — puzzle generator, drag selection, timer, win / timeout modals, session score. |
+| `data.js` | Category word pools (Arsenal & PSG squads, UCL winners, Ballon d'Or, stadiums, managers, etc.). |
+| `manifest.webmanifest` | PWA manifest — "Add to Home Screen" installs as *UCL Hunt*. |
+| `assets/icon-*.png`, `favicon-*.png`, `apple-touch-icon.png` | Kenchic logo set, reused as the app icon. |
+| `assets/og-image.jpg` | 1200 × 630 social share card. |
+| `source/` | Offline Python tooling that originally generated the asset images. Not used at runtime. |
 
 ## Stack
 
-- Plain HTML + CSS. No framework, no build step, no JavaScript.
-- ~550 KB total page weight (the menu image is the bulk; everything else is < 100 KB).
-- Single-file mental model: edit `index.html` and you're editing the whole site.
+- Plain HTML + CSS + JavaScript. No framework, no bundler, no build step.
+- Runtime is three small files: `index.html`, `styles.css`, `app.js` (+ `data.js`).
+- No database, no localStorage — each session starts fresh.
 
 ## Run it locally
 
@@ -34,25 +43,22 @@ python3 -m http.server 8765
 
 Open <http://localhost:8765> on the Mac. To test on a phone on the same Wi-Fi, open `http://<your-Mac-LAN-IP>:8765` (find the IP with `ipconfig getifaddr en0`).
 
-## Updating the menu
+## Adding new puzzles
 
-When prices, items, or artwork change:
+Edit `data.js`. Each entry is a category with a prompt and a pool of at least 8 uppercase words (so a 6-word puzzle still has variety run-to-run):
 
-```bash
-cp ~/Downloads/new-menu.jpg source/menu.jpg
-python3 source/build_assets.py     # rebuilds menu.jpg, menu.webp, favicons, og-image
-git add source/menu.jpg assets/
-git commit -m "Update menu — <what changed>"
-git push
+```js
+{
+  prompt: "Find 6 Bundesliga clubs",
+  pool: ["BAYERN", "DORTMUND", "LEVERKUSEN", "LEIPZIG", "FRANKFURT", "STUTTGART", "WOLFSBURG", "UNION"]
+}
 ```
 
-GitHub Pages redeploys automatically (about a minute).
+Words must be 12 letters or shorter (grid is 12 × 12). No spaces, no hyphens.
 
 ## Deployment
 
-The site is hosted on **Red Giant** infrastructure at `scanthisqr.redgiant.co.ke`. It's a pure static site — `index.html`, `styles.css`, `manifest.webmanifest`, and the `assets/` folder are the only files the web server needs.
-
-To deploy a new version, upload the working tree (excluding `source/` and `.git/`) to the server's web root, e.g.:
+The site is hosted on **Red Giant** infrastructure at `scanthisqr.redgiant.co.ke`. Pure static — `index.html`, `styles.css`, `app.js`, `data.js`, `manifest.webmanifest`, and `assets/` are all the web server needs.
 
 ```bash
 rsync -avz --delete \
@@ -60,19 +66,7 @@ rsync -avz --delete \
   /Users/lincoln/scanqr/  user@server:/var/www/scanthisqr/
 ```
 
-Or zip and upload via cPanel / File Manager — same files, same result.
-
-## QR code
-
-Generate a QR pointing at the live URL:
-
-```
-http://scanthisqr.redgiant.co.ke/
-```
-
-Print it at restaurant-sized resolution — the page is already optimised for the phone that will scan it.
-
 ## Credits
 
-- Menu artwork: Kenchic x Ngemi
+- Brand: Kenchic
 - Built with [Claude Code](https://claude.com/claude-code)
