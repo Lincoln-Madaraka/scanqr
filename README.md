@@ -1,39 +1,36 @@
-# scanqr — Kenchic UCL Word Hunt
+# scanqr — Match Day Special Menu
 
-A mobile-first **UEFA Champions League word-hunt** mini-game, dressed in the Kenchic brand. Built around the Arsenal vs PSG fixture but the puzzle pool spans the wider football world so players can run game after game without seeing repeats.
+A single-page, mobile-first **Match Day Special** menu — Geco Cafe × Masshouse × Kenchic. Scan the QR, see the menu. The whole site is one centered, full-width image that fills the screen on a phone and sits as a tidy card on tablet / desktop.
 
 ## Live site
 
 <http://scanthisqr.redgiant.co.ke/>
 
-## How the game plays
-
-- A category prompt appears at the top of every round (e.g. *"Find 6 Arsenal players"*, *"Find 6 Champions League winning clubs"*).
-- A 12 × 12 letter grid hides **6 valid answers** somewhere inside — horizontally, vertically, or diagonally, forward or backward.
-- Press-and-drag across letters in a straight line to commit a word. Correct → cells lock in **green**. Wrong → cells flash **red** and clear.
-- A **30-second** countdown ring runs in the corner and never pauses.
-- Find all 6 in time → "Champion!" modal, session score increments, *Next puzzle* loads a fresh one.
-- Time runs out → "Oopsie!" modal shows your score and a mini-grid with all 6 answers revealed.
-- Puzzles are procedurally generated, so the supply is effectively endless.
-
 ## What's in this repo
 
 | Path | What it is |
 |---|---|
-| `index.html` | Game shell — header, prompt + timer, grid container, modal. Inline SVG icons (no emoji). |
-| `styles.css` | Layout (upper-3/4 play area, lower-1/4 score strip), cell states, modal styling, Kenchic palette. |
-| `app.js` | Game logic — puzzle generator, drag selection, timer, win / timeout modals, session score. |
-| `data.js` | Category word pools (Arsenal & PSG squads, UCL winners, Ballon d'Or, stadiums, managers, etc.). |
-| `manifest.webmanifest` | PWA manifest — "Add to Home Screen" installs as *UCL Hunt*. |
-| `assets/icon-*.png`, `favicon-*.png`, `apple-touch-icon.png` | Kenchic logo set, reused as the app icon. |
-| `assets/og-image.jpg` | 1200 × 630 social share card. |
-| `source/` | Offline Python tooling that originally generated the asset images. Not used at runtime. |
+| `index.html` | Single page — just a `<picture>` element pointing at the menu artwork. |
+| `styles.css` | ~30 lines. Flex-centers the image, full-width on phones, capped at 720 px with a soft shadow on larger screens. |
+| `manifest.webmanifest` | PWA manifest — "Add to Home Screen" installs as *Match Day*. |
+| `assets/match-day-menu.jpg` | The menu artwork (JPG fallback). |
+| `assets/match-day-menu.webp` | The menu artwork (WEBP, served to modern browsers). |
+| `assets/` | Icons, favicons, OG image. |
+| `source/` | Legacy offline Python tooling (asset-processing scripts). Not used at runtime. |
 
 ## Stack
 
-- Plain HTML + CSS + JavaScript. No framework, no bundler, no build step.
-- Runtime is three small files: `index.html`, `styles.css`, `app.js` (+ `data.js`).
-- No database, no localStorage — each session starts fresh.
+- Plain HTML + CSS. No JavaScript, no framework, no bundler, no build step.
+- The whole runtime is two files: `index.html` + `styles.css` + the image in `assets/`.
+
+## Updating the menu artwork
+
+Export the menu (PDF, Figma, etc.) to a JPG and a WEBP and drop both into `assets/`:
+
+- `assets/match-day-menu.jpg` — full-resolution JPG, ~1024–1600 px wide, quality ~85.
+- `assets/match-day-menu.webp` — same image, WEBP for smaller payload on modern browsers.
+
+If the aspect ratio of the new artwork differs from the old, update the `width` and `height` attributes on the `<img>` in `index.html` to match the intrinsic pixel dimensions — this stops Cumulative Layout Shift while the image loads.
 
 ## Run it locally
 
@@ -43,22 +40,14 @@ python3 -m http.server 8765
 
 Open <http://localhost:8765> on the Mac. To test on a phone on the same Wi-Fi, open `http://<your-Mac-LAN-IP>:8765` (find the IP with `ipconfig getifaddr en0`).
 
-## Adding new puzzles
-
-Edit `data.js`. Each entry is a category with a prompt and a pool of at least 8 uppercase words (so a 6-word puzzle still has variety run-to-run):
-
-```js
-{
-  prompt: "Find 6 Bundesliga clubs",
-  pool: ["BAYERN", "DORTMUND", "LEVERKUSEN", "LEIPZIG", "FRANKFURT", "STUTTGART", "WOLFSBURG", "UNION"]
-}
-```
-
-Words must be 12 letters or shorter (grid is 12 × 12). No spaces, no hyphens.
+Checks:
+- Phone (375 px viewport): image is edge-to-edge, no horizontal scroll.
+- Tablet (768 px): image capped at 720 px, centered, soft shadow card.
+- Desktop (1440 px): same as tablet, with breathing room above/below.
 
 ## Deployment
 
-The site is hosted on **Red Giant** infrastructure at `scanthisqr.redgiant.co.ke`. Pure static — `index.html`, `styles.css`, `app.js`, `data.js`, `manifest.webmanifest`, and `assets/` are all the web server needs.
+The site is hosted on **Red Giant** infrastructure at `scanthisqr.redgiant.co.ke`. Pure static — `index.html`, `styles.css`, `manifest.webmanifest`, and `assets/` are all the web server needs.
 
 ```bash
 rsync -avz --delete \
@@ -68,5 +57,5 @@ rsync -avz --delete \
 
 ## Credits
 
-- Brand: Kenchic
+- Brands: Geco Cafe · Masshouse · Kenchic
 - Built with [Claude Code](https://claude.com/claude-code)

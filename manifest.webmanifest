@@ -1,11 +1,11 @@
 {
-  "name": "Kenchic UCL Word Hunt",
-  "short_name": "UCL Hunt",
-  "description": "A Champions League word hunt by Kenchic. Find 6 football names in 30 seconds.",
+  "name": "Match Day Special Menu",
+  "short_name": "Match Day",
+  "description": "Match Day Special menu — Geco Cafe x Masshouse x Kenchic. Bitings, pizza, grilled platters.",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#FFF8F2",
-  "theme_color": "#0D2E5C",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
   "icons": [
     { "src": "assets/icon-192.png", "sizes": "192x192", "type": "image/png" },
     { "src": "assets/icon-512.png", "sizes": "512x512", "type": "image/png" }
