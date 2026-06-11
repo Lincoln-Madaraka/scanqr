@@ -1,6 +1,6 @@
 # scanqr — Match Day Special Menu
 
-A single-page, mobile-first **Match Day Special** menu — Geco Cafe × Masshouse × Kenchic. Scan the QR, see the menu. The whole site is one centered, full-width image that fills the screen on a phone and sits as a tidy card on tablet / desktop.
+page update
 
 ## Live site
 
