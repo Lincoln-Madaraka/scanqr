@@ -10,7 +10,7 @@ A single-page, mobile-first **Match Day Special** menu — Geco Cafe × Masshous
 
 | Path | What it is |
 |---|---|
-| `index.html` | The landing page — **World Cup 26 · Word Hunt** game (self-contained, inline styles). Served at the root domain. |
+| `index.html` | — **World Cup 26 · Word Hunt** game (self-contained, inline styles). Served at the root domain. |
 | `menu.html` | The Match Day Special menu — a single `<picture>` element pointing at the menu artwork. Reachable at `/menu.html`. |
 | `styles.css` | ~30 lines used by `menu.html`. Flex-centers the image, full-width on phones, capped at 720 px with a soft shadow on larger screens. |
 | `manifest.webmanifest` | PWA manifest — "Add to Home Screen" installs as *Match Day*. |
