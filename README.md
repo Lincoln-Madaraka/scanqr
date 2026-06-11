@@ -10,8 +10,9 @@ A single-page, mobile-first **Match Day Special** menu — Geco Cafe × Masshous
 
 | Path | What it is |
 |---|---|
-| `index.html` | Single page — just a `<picture>` element pointing at the menu artwork. |
-| `styles.css` | ~30 lines. Flex-centers the image, full-width on phones, capped at 720 px with a soft shadow on larger screens. |
+| `index.html` | The landing page — **World Cup 26 · Word Hunt** game (self-contained, inline styles). Served at the root domain. |
+| `menu.html` | The Match Day Special menu — a single `<picture>` element pointing at the menu artwork. Reachable at `/menu.html`. |
+| `styles.css` | ~30 lines used by `menu.html`. Flex-centers the image, full-width on phones, capped at 720 px with a soft shadow on larger screens. |
 | `manifest.webmanifest` | PWA manifest — "Add to Home Screen" installs as *Match Day*. |
 | `assets/match-day-menu.jpg` | The menu artwork (JPG fallback). |
 | `assets/match-day-menu.webp` | The menu artwork (WEBP, served to modern browsers). |
@@ -30,7 +31,7 @@ Export the menu (PDF, Figma, etc.) to a JPG and a WEBP and drop both into `asset
 - `assets/match-day-menu.jpg` — full-resolution JPG, ~1024–1600 px wide, quality ~85.
 - `assets/match-day-menu.webp` — same image, WEBP for smaller payload on modern browsers.
 
-If the aspect ratio of the new artwork differs from the old, update the `width` and `height` attributes on the `<img>` in `index.html` to match the intrinsic pixel dimensions — this stops Cumulative Layout Shift while the image loads.
+If the aspect ratio of the new artwork differs from the old, update the `width` and `height` attributes on the `<img>` in `menu.html` to match the intrinsic pixel dimensions — this stops Cumulative Layout Shift while the image loads.
 
 ## Run it locally
 
