@@ -63,8 +63,9 @@
   .instr{margin:clamp(8px,1.6svh,16px) 0 0; text-align:center; font-family:"Questrial",sans-serif;
     font-size:calc(var(--tw) * .042); letter-spacing:.02em;}
 
-  /* statement + cards sit together, centred in whatever height is left */
-  .play{flex:1 0 auto; display:flex; flex-direction:column; justify-content:center;
+  /* statement + cards sit together right under the title; tall screens leave the
+     spare height below the cards, not as a gap above the statement */
+  .play{flex:1 0 auto; display:flex; flex-direction:column; justify-content:flex-start;
     gap:clamp(10px,2.2svh,22px); padding-top:clamp(8px,1.6svh,16px);}
 
   /* ---------- statement area ---------- */
