@@ -2,395 +2,242 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<!-- Always fetch the latest HTML — never serve a stale cached copy after a redeploy -->
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<!-- Revalidate the HTML on every load (always fresh after a redeploy) but let the browser
+     reuse a cached copy on a 304. Authoritative caching headers are set in .htaccess. -->
+<meta http-equiv="Cache-Control" content="no-cache, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#0e3597">
-<title>World Cup 26 · Word Hunt</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#1d2e5c">
+<title>Kenchic · Myth or Fact</title>
+<meta name="description" content="Kenchic Myth or Fact: read the statement and tap MYTH or FACT before the 10 seconds run out.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Kenchic · Myth or Fact">
+<meta property="og:description" content="One statement. Ten seconds. Myth or fact?">
+<meta property="og:image" content="assets/myth-or-fact/og-image.jpg">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=2">
 <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16.png?v=2">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=2">
-<!-- Preload above-the-fold images so they download during parse, not after JS runs -->
-<link rel="preload" as="image" href="assets/worldcup-blue-banner.webp" fetchpriority="high">
-<link rel="preload" as="image" href="assets/multichoice-logo.webp">
+<!-- Board artwork paints the header, so fetch it during parse. Built by source/build_myth_or_fact.py -->
+<link rel="preload" as="image" href="assets/myth-or-fact/header.webp?v=1" fetchpriority="high">
+<link rel="preload" as="image" href="assets/myth-or-fact/pattern.webp?v=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Questrial&display=swap">
 <style>
   :root{
-    --blue:#1747b7;
-    --blue-mid:#0b3393;
-    --blue-deep:#041e63;
-    --navy:#000a2f;
-    --red:#d91812;
-    --green:#05824f;
-    --white:#ffffff;
-    --gold:#f5c84e;
-    --gold-deep:#e0a92e;
-    --gold-light:#ffe08a;
-    --ink:#0a1430;
-    --paper:#eef3ff;
-    --found:#19c37d;
-    --sel:#f5c84e;
+    --navy:#1d2e5c;     /* board pattern, dark tone */
+    --red:#df3633;      /* MYTH OR FACT red */
+    --yellow:#e3a20b;   /* MYTH card */
+    --green:#1e9e4a;    /* right answer */
+    --ink:#1d2e5c;
+    /* The header IS the board artwork, scaled so the MYTH OR FACT title is --tw wide.
+       Both background layers and the masthead spacer derive from --bw, so the baked-in
+       logo/title and the pattern below always line up at every screen size. */
+    --tw:min(84vw,420px);
+    --bw:calc(var(--tw) * 1.968);   /* 1600px board / 813px title */
+    --top:12px;
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
-  html,body{margin:0; height:100%;}
+  html,body{margin:0;}
   body{
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    background:
-      radial-gradient(120% 70% at 50% -12%,rgba(255,255,255,.22),transparent 46%),
-      linear-gradient(160deg,#0a42b2 0%,var(--blue-mid) 42%,var(--blue-deep) 74%,var(--navy) 100%);
-    color:var(--paper);
-    height:100vh; height:100svh; min-height:100svh; width:100vw; overflow:hidden;
+    min-height:100vh; min-height:100svh;
+    background:var(--navy); color:#fff;
+    font-family:"Fredoka",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    user-select:none; -webkit-user-select:none; -webkit-text-size-adjust:100%;
+  }
+  .sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap;}
+
+  /* ---------- page column ---------- */
+  .app{
     display:flex; flex-direction:column;
-    user-select:none; -webkit-user-select:none;
-    overscroll-behavior:none; -webkit-text-size-adjust:100%;
-  }
-
-  /* ---------- animated backdrop ---------- */
-  .glow{position:fixed; inset:-20%; z-index:0; pointer-events:none;
+    width:100%; max-width:620px; min-height:100vh; min-height:100svh; margin:0 auto;
+    padding:0 clamp(14px,4vw,24px) calc(16px + env(safe-area-inset-bottom));
     background:
-      radial-gradient(closest-side at 18% 14%,rgba(255,255,255,.16),transparent 64%),
-      radial-gradient(closest-side at 84% 18%,rgba(245,200,78,.2),transparent 62%);
-    }
-  @keyframes drift{0%{transform:translate(-10%,-6%) scale(1);} 100%{transform:translate(10%,9%) scale(1.25);}}
-  .pitch{display:none;}
-  .pitch span{position:absolute; bottom:-15%; border-radius:50%; opacity:.12;
-    border:2px solid rgba(255,255,255,.5);
-    background:radial-gradient(circle at 35% 30%,rgba(255,255,255,.22),transparent 62%);
-    animation:floatUp linear infinite;}
-  .ribbons{display:none;}
-  .ribbons:before,.ribbons:after{content:""; position:absolute; width:58vmax; height:58vmax; border-radius:50%;
-    border:clamp(18px,4vw,40px) solid rgba(245,200,78,.52); opacity:.65;}
-  .ribbons:before{left:-42vmax; top:-18vmax;}
-  .ribbons:after{right:-40vmax; bottom:-36vmax;}
-  .host-sash{display:none; position:fixed; inset:auto -16vw 7vh auto; z-index:0; pointer-events:none; width:70vw; max-width:380px; height:150px;
-    background:linear-gradient(90deg,var(--blue-deep) 0 33%,var(--white) 33% 40%,var(--red) 40% 68%,var(--white) 68% 74%,var(--green) 74%);
-    opacity:.2; transform:rotate(-18deg); border-radius:100px; filter:blur(.2px);}
-  @keyframes floatUp{
-    0%{transform:translateY(0) rotate(0);}
-    100%{transform:translateY(-125vh) rotate(360deg);}
+      url("assets/myth-or-fact/header.webp?v=1") center var(--top) / var(--bw) auto no-repeat,
+      url("assets/myth-or-fact/pattern.webp?v=1") center calc(var(--top) + var(--bw) * .34125) / var(--bw) auto repeat-y,
+      var(--navy);
   }
+  @media (min-width:700px){ .app{box-shadow:0 0 60px rgba(0,0,0,.35);} }
+  .masthead{flex:0 0 auto; height:calc(var(--top) + var(--bw) * .2125);} /* down to the title baseline */
+  .instr{margin:clamp(8px,1.6svh,16px) 0 0; text-align:center; font-family:"Questrial",sans-serif;
+    font-size:calc(var(--tw) * .042); letter-spacing:.02em;}
 
-  .screen{position:absolute; inset:0; z-index:1; display:flex; flex-direction:column; overflow:hidden;}
-  /* Default hide = fully removed from layout (used by the in-game result box,
-     so the NEXT VICTIM button never reserves space or gets clipped). */
-  .hidden{display:none !important;}
-  /* Whole SCREENS stay laid out but invisible, so their images decode up front
-     while the start screen shows — PLAY swaps are then instant, never a flash. */
-  .screen.hidden{display:flex !important; visibility:hidden !important; pointer-events:none !important;
-    backdrop-filter:none !important; -webkit-backdrop-filter:none !important;}
-  .screen.hidden, .screen.hidden *{animation-play-state:paused !important;}
+  /* statement + cards sit together, centred in whatever height is left */
+  .play{flex:1 0 auto; display:flex; flex-direction:column; justify-content:center;
+    gap:clamp(10px,2.2svh,22px); padding-top:clamp(8px,1.6svh,16px);}
 
-  /* ---------- Start screen ---------- */
-  #start{align-items:center; justify-content:flex-start; text-align:center; padding:18px 24px 22px; gap:8px;}
-  .wc26logo{margin-bottom:2px; animation:floaty 3.2s ease-in-out infinite;
-    min-height:min(34dvh,300px); display:flex; align-items:center; justify-content:center;}
-  .wc26logo img{display:block; height:min(34dvh,300px); width:min(92vw,560px); object-fit:contain;
-    filter:drop-shadow(0 10px 18px rgba(0,0,0,.45));}
-  @keyframes floaty{0%,100%{transform:translateY(0);} 50%{transform:translateY(-7px);}}
-  #start h1{margin:-4px 0 0; font-size:clamp(48px,16vw,112px); font-weight:900; letter-spacing:1px; line-height:.82;
-    color:#fff; text-shadow:0 5px 18px rgba(0,0,0,.3); animation:riseIn .6s .05s ease both;}
-  @keyframes riseIn{from{opacity:0; transform:translateY(18px);} to{opacity:1; transform:none;}}
-  .tag{margin:4px 0 2px; font-size:12px; letter-spacing:3px; font-weight:800; color:var(--gold-light); opacity:.96;}
-  #start p{margin:6px 0 6px; max-width:280px; opacity:.9; font-size:14px; line-height:1.4;}
-  .rules{display:flex; gap:12px; margin:10px 0 8px;}
-  .rule{background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.16);
-    border-radius:14px; padding:9px 14px; font-size:12px; min-width:70px;}
-  .rule b{display:block; font-size:19px; color:var(--gold);}
+  /* ---------- statement area ---------- */
+  .stage{display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:clamp(8px,1.6svh,14px); min-height:clamp(200px,33svh,290px);}
+  .badge{height:52px; display:flex; align-items:center; justify-content:center;}
+
+  .timer{position:relative; width:52px; height:52px; border-radius:50%; background:#fff;
+    box-shadow:0 6px 16px rgba(0,0,0,.3);}
+  .timer svg{position:absolute; inset:0; width:100%; height:100%; transform:rotate(-90deg);}
+  .timer circle{fill:none; stroke-width:4;}
+  .timer .track{stroke:#e3e8f3;}
+  .timer .ring{stroke:var(--yellow); stroke-linecap:round; stroke-dasharray:131.95; stroke-dashoffset:0;}
+  .timer b{position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    color:var(--ink); font-weight:700; font-size:22px; font-variant-numeric:tabular-nums;}
+  .timer.low .ring{stroke:var(--red);}
+  .timer.low b{color:var(--red); animation:beat 1s ease infinite;}
+
+  .verdict{display:inline-flex; align-items:center; gap:.35em; height:44px; padding:0 20px; border-radius:999px;
+    font-weight:600; font-size:clamp(15px,4.4vw,19px); color:#fff; box-shadow:0 6px 16px rgba(0,0,0,.3);
+    animation:pop .35s ease both;}
+  .verdict b{font-weight:700;}
+  .verdict.right{background:var(--green);}
+  .verdict.wrong{background:var(--red);}
+  .verdict.timeout{background:#fff; color:var(--ink);}
+  .verdict.timeout b{color:var(--red);}
+
+  .qcard{width:100%; max-width:480px; padding:clamp(14px,2.4svh,22px) 20px; border-radius:18px;
+    background:#fff; color:var(--ink); text-align:center; box-shadow:0 14px 32px rgba(0,0,0,.35);}
+  .qcard.pop{animation:pop .45s cubic-bezier(.2,1.4,.4,1) both;}
+  .statement{margin:0; font-weight:600; font-size:clamp(18px,5.2vw,25px); line-height:1.25;}
 
   .btn{
-    appearance:none; border:0; cursor:pointer;
-    background:linear-gradient(180deg,var(--gold),var(--gold-deep));
-    color:#3a2a05; font-weight:900; font-size:20px; letter-spacing:.5px;
-    padding:16px 46px; border-radius:999px;
-    box-shadow:0 8px 0 var(--gold-deep),0 12px 22px rgba(0,0,0,.35);
-    animation:none;
+    appearance:none; cursor:pointer; touch-action:manipulation;
+    min-width:220px; padding:14px 40px; border-radius:18px;
+    background:linear-gradient(180deg,#fff,#eef3ff); color:var(--ink);
+    border:2px solid rgba(255,255,255,.95);
+    font:700 20px/1 "Fredoka",sans-serif; letter-spacing:.5px;
+    box-shadow:0 7px 0 #c9d4f0,0 14px 28px rgba(0,0,0,.34);
   }
-  #playBtn{
-    margin:8px 0 0; min-width:240px;
-    background:linear-gradient(180deg,#fff,#eef3ff);
-    color:#07102d; border:2px solid rgba(255,255,255,.95);
-    border-radius:18px; box-shadow:0 8px 0 #c9d4f0,0 14px 28px rgba(0,0,0,.34);
-    animation:playPulse 2.4s ease-in-out infinite;
-  }
-  #playBtn:active{box-shadow:0 4px 0 #c9d4f0,0 7px 14px rgba(0,0,0,.32);}
-  @keyframes glow{
-    0%,100%{box-shadow:0 8px 0 var(--gold-deep),0 12px 22px rgba(0,0,0,.35),0 0 0 rgba(245,200,78,0);}
-    50%{box-shadow:0 8px 0 var(--gold-deep),0 12px 28px rgba(0,0,0,.4),0 0 26px rgba(245,200,78,.55);}
-  }
-  @keyframes playPulse{0%,100%{transform:scale(1);} 50%{transform:scale(1.035);}}
-  @keyframes playGlow{
-    0%,100%{box-shadow:0 8px 0 #c9d4f0,0 14px 28px rgba(0,0,0,.34),0 0 0 rgba(255,255,255,0);}
-    50%{box-shadow:0 8px 0 #c9d4f0,0 16px 34px rgba(0,0,0,.4),0 0 28px rgba(255,255,255,.42);}
-  }
-  .btn:active{transform:translateY(4px); animation:none;
-    box-shadow:0 4px 0 var(--gold-deep),0 6px 12px rgba(0,0,0,.35);}
+  .btn:active{transform:translateY(4px); animation:none; box-shadow:0 3px 0 #c9d4f0,0 7px 14px rgba(0,0,0,.32);}
+  #startBtn{font-size:24px; padding:18px 52px; animation:pulse 2.4s ease-in-out infinite;}
 
-  /* ---------- Game screen ---------- */
-  #game{padding:6px 6px calc(6px + env(safe-area-inset-bottom)); align-items:center; justify-content:center;}
-  .phone{
-    /* Big PHONE screen: fills the width on real phones, but stays phone-shaped and
-       centered on bigger screens so letters stay square and nothing stretches. */
-    width:min(96vw, 480px); height:min(100%, 960px); max-height:100%; margin:auto;
-    display:flex; flex-direction:column; overflow:hidden;
-    background:linear-gradient(180deg,rgba(255,255,255,.12),rgba(255,255,255,.04));
-    border:1px solid rgba(255,255,255,.24); border-radius:22px;
-    box-shadow:0 22px 60px rgba(0,0,0,.36);
-  }
-  .gamebrand{
-    flex:0 0 auto; display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:9px;
-    padding:9px 10px 7px; border-bottom:1px solid rgba(255,255,255,.14);
-    background:linear-gradient(180deg,rgba(0,10,47,.4),rgba(0,10,47,.08));
-  }
-  .gamebrand .miniwc img{display:block; width:clamp(70px,8vw,116px); height:clamp(52px,5.9vw,86px); object-fit:cover; object-position:center;
-    border-radius:6px; filter:drop-shadow(0 5px 8px rgba(0,0,0,.35));}
-  .gamebrand h2{margin:0; color:#fff; font-size:clamp(18px,2.4vw,28px); line-height:1; font-weight:900; text-transform:uppercase;}
-  .gamebrand span{display:block; margin-top:3px; color:var(--gold-light); font-size:clamp(9px,1.3vw,13px); letter-spacing:2px; font-weight:900;}
-  .hostmarks{display:flex; gap:4px; align-items:center;}
-  .hostmarks{display:none;}
-  .hostmarks i{display:block; width:12px; height:12px; border-radius:50%; box-shadow:0 0 0 1px rgba(255,255,255,.5) inset;}
-  .hostmarks i:nth-child(1){background:var(--blue-deep);}
-  .hostmarks i:nth-child(2){background:var(--red);}
-  .hostmarks i:nth-child(3){background:var(--green);}
-  .gamebody{position:relative; flex:1 1 auto; min-height:0; display:flex; flex-direction:column; padding:8px 9px 7px; overflow:hidden;}
-  .gamebody:before{content:""; position:absolute; inset:0; z-index:-1;
-    background:linear-gradient(180deg,rgba(3,20,76,.78),rgba(3,20,76,.9)),url("assets/worldcup-ball.webp") center / cover no-repeat;
-    opacity:.42;}
-  .hud{display:flex; align-items:center; gap:10px; margin-bottom:8px;}
-  .count{
-    background:rgba(0,0,0,.28); border:1px solid rgba(255,255,255,.16);
-    border-radius:12px; padding:6px 12px; font-weight:800; font-size:clamp(15px,1.9vw,22px); white-space:nowrap;}
-  .count b{color:var(--gold); font-size:clamp(18px,2.3vw,26px);}
-  .timerwrap{flex:1; display:flex; align-items:center; gap:8px;}
-  .clock{font-weight:900; font-variant-numeric:tabular-nums; font-size:clamp(18px,2.3vw,26px); min-width:30px; text-align:right;}
-  .bar{flex:1; height:12px; border-radius:999px; background:rgba(0,0,0,.32); overflow:hidden; border:1px solid rgba(255,255,255,.14);}
-  .bar > i{display:block; height:100%; width:100%; border-radius:999px;
-    background:linear-gradient(90deg,var(--found),var(--gold)); transition:width 1s linear;}
-  .bar.low > i{background:linear-gradient(90deg,#ff6b6b,#ff3b3b);}
-  .bar.low + .clock{color:#ff6b6b; animation:pulse 1s ease infinite;}
-  @keyframes pulse{0%,100%{transform:scale(1);} 50%{transform:scale(1.22);}}
+  /* what shows in each state */
+  .app[data-state="ready"] .badge,
+  .app[data-state="ready"] .qcard,
+  .app[data-state="ready"] #nextBtn,
+  .app:not([data-state="ready"]) #startBtn,
+  .app[data-state="question"] .verdict,
+  .app[data-state="done"] .timer{display:none;}
+  .app[data-state="question"] #nextBtn{visibility:hidden;} /* hold its space so nothing jumps */
 
-  .question{
-    text-align:center; line-height:1.25;
-    padding:8px 12px; margin-bottom:7px; border-radius:12px;
-    background:rgba(0,0,0,.24); border:1px solid rgba(255,255,255,.16); color:#fff;
-    animation:qIn .4s ease both;}
-  @keyframes qIn{from{opacity:0; transform:translateY(-8px);} to{opacity:1; transform:none;}}
-  .q-kicker{display:block; font-size:clamp(11px,1.5vw,16px); letter-spacing:2.5px; font-weight:800; color:var(--gold);}
-  .q-main{display:block; font-size:clamp(16px,2.3vw,26px); font-weight:800; margin-top:2px;}
-
-  /* grid takes the upper ~3/4 */
-  .gridwrap{flex:1 1 auto; display:flex; align-items:center; justify-content:center; min-height:0; min-width:0; width:100%;}
-  #grid{
-    /* Largest square that fits BOTH the available width and height — pure CSS,
-       so the board can never spill past the edges or crop, even before JS runs. */
-    width:auto; height:100%; aspect-ratio:1/1; max-width:100%; max-height:100%; margin:auto;
-    flex:0 0 auto; overflow:hidden; contain:layout paint;
-    display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); grid-template-rows:repeat(7,minmax(0,1fr));
-    grid-auto-rows:minmax(0,1fr); gap:5px; touch-action:none;
-    background:linear-gradient(180deg,rgba(255,255,255,.14),rgba(0,0,0,.18)); padding:7px; border-radius:14px;
-    border:1px solid rgba(255,255,255,.2); box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);}
-  .cell{
-    display:flex; align-items:center; justify-content:center;
-    min-width:0; min-height:0; overflow:hidden;
-    background:linear-gradient(180deg,#fff,var(--paper)); color:var(--ink);
-    border-radius:8px; font-weight:800; text-transform:uppercase;
-    font-size:var(--cell-font,clamp(16px,5.2vw,40px)); line-height:1; user-select:none;}
-  @keyframes cellIn{from{opacity:0; transform:scale(.4);} to{opacity:1; transform:none;}}
-  .cell.sel{background:var(--sel); color:#3a2a05; transform:scale(1.04);}
-  .cell.found{background:var(--found); color:#fff; animation:cellPop .35s ease;}
-  .cell.miss{background:#ec3b3b; color:#fff; animation:cellPop .35s ease;}
-  @keyframes cellPop{0%{transform:scale(1);} 45%{transform:scale(1.28);} 100%{transform:scale(1);}}
-
-  /* timeout result bar (replaces the answer list) */
-  .result{flex:0 0 auto; display:flex; flex-direction:column; align-items:center; gap:8px;
-    padding:8px 12px 0; visibility:hidden;}
-  .result.show{visibility:visible; animation:qIn .35s ease both;}
-  #resultText{font-weight:800; font-size:clamp(15px,1.9vw,22px); color:#fff; text-align:center; line-height:1.3;}
-  .btn-sm{padding:13px 32px; font-size:17px;}
-  .victim-btn{
-    position:relative; overflow:hidden;
-    background:linear-gradient(180deg,#dbe3f4,#bccaea); color:#0a1b45;
-    border:2px solid rgba(140,160,205,.9);
-    border-radius:16px;
-    box-shadow:0 7px 0 #93a6d2,0 12px 24px rgba(0,0,0,.34);
-    animation:victimBounce 1.65s ease-in-out infinite;
+  /* ---------- MYTH / FACT cards ---------- */
+  .boards{display:grid; grid-template-columns:1fr 1fr; gap:clamp(12px,4vw,24px);
+    width:100%; max-width:560px; margin:0 auto;}
+  .board{
+    appearance:none; border:0; margin:0; padding:0; font:inherit; color:inherit;
+    cursor:pointer; touch-action:manipulation;
+    display:flex; flex-direction:column; align-items:center;
+    width:100%; aspect-ratio:635/694; max-height:32svh; min-height:130px;
+    border-radius:clamp(16px,5vw,30px);
+    background:var(--card); box-shadow:0 10px 24px rgba(0,0,0,.3);
+    transition:background-color .25s ease, opacity .25s ease, transform .15s ease;
   }
-  .victim-btn:before{
-    content:""; position:absolute; inset:0;
-    background:linear-gradient(90deg,transparent,rgba(11,51,147,.16),transparent);
-    transform:translateX(-120%);
-    animation:victimSweep 2.4s ease-in-out infinite;
-  }
-  .victim-btn:active{box-shadow:0 3px 0 #93a6d2,0 7px 14px rgba(0,0,0,.28);}
-  @keyframes victimBounce{
-    0%,100%{transform:translateY(0);}
-    50%{transform:translateY(-3px);}
-  }
-  @keyframes victimSweep{
-    0%,35%{transform:translateX(-120%);}
-    70%,100%{transform:translateX(120%);}
-  }
+  .board.myth{--card:var(--yellow); --label:#fff;}
+  .board.fact{--card:#fff; --label:var(--red);}
+  .board.is-right{--card:var(--green); --label:#fff; animation:bump .4s ease;}
+  .board.is-wrong{--card:var(--red); --label:#fff; animation:shake .4s ease;}
+  .board.is-dim{opacity:.45;}
+  .board:disabled{cursor:default;}
+  .board:not(:disabled):active{transform:scale(.97);}
+  .board:focus-visible{outline:3px solid #fff; outline-offset:3px;}
 
-  /* ---------- Sponsor branding (MultiChoice, gold) ---------- */
-  .sponsor{display:flex; flex-direction:column; align-items:center; gap:7px; margin-top:16px;}
-  .sponsor .label{font-size:11px; letter-spacing:2.5px; opacity:.8; font-weight:800;}
-  .mcbug{background:#fff; border:1px solid rgba(255,255,255,.5);
-    border-radius:8px; padding:8px 14px; box-shadow:0 6px 18px rgba(0,0,0,.35);}
-  .mcbug img{display:block; height:72px; width:auto; max-width:min(74vw,250px); object-fit:contain;}
-  .card .sponsor{margin:16px 0 0;}
+  /* wordmarks are alpha masks cut from the board, filled with --label */
+  .label{display:block; margin-top:7%;}
+  .label i{display:block; background:var(--label); transition:background-color .25s ease;
+    -webkit-mask:var(--mask) center / contain no-repeat; mask:var(--mask) center / contain no-repeat;}
+  .board.myth .label{width:55%; filter:drop-shadow(0 2px 1px rgba(120,70,0,.35));}
+  .board.myth .label i{--mask:url("assets/myth-or-fact/myth-label.png?v=1"); aspect-ratio:657/201;}
+  .board.fact .label{width:47%;}
+  .board.fact .label i{--mask:url("assets/myth-or-fact/fact-label.png?v=1"); aspect-ratio:546/213;}
+  .board.is-right .label, .board.is-wrong .label{filter:none;}
 
-  /* ---------- Modal ---------- */
-  #modal{align-items:center; justify-content:center; padding:24px; z-index:6;
-    background:rgba(3,10,30,.62); backdrop-filter:blur(3px);}
-  #confetti{position:absolute; inset:0; z-index:0; pointer-events:none; overflow:hidden;}
-  #confetti i{position:absolute; top:-12%; border-radius:2px;
-    animation:fall linear forwards;}
-  @keyframes fall{0%{transform:translateY(0) rotate(0); opacity:1;}
-    100%{transform:translateY(118vh) rotate(620deg); opacity:.9;}}
-  .card{position:relative; z-index:1;
-    width:100%; max-width:340px; text-align:center;
-    background:linear-gradient(180deg,#fff,var(--paper)); color:var(--ink);
-    border-radius:22px; padding:28px 22px; box-shadow:0 24px 60px rgba(0,0,0,.55);
-    animation:pop .28s ease;}
-  @keyframes pop{from{transform:scale(.85); opacity:0;} to{transform:scale(1); opacity:1;}}
-  .winmark{margin-bottom:6px; animation:floaty 3.2s ease-in-out infinite;}
-  .winmark img{height:116px; width:auto; max-width:210px; display:inline-block; object-fit:contain;}
-  .card h2{margin:8px 0 4px; font-size:26px; font-weight:900;}
-  .card p{margin:0 0 18px; font-size:15px; opacity:.8; line-height:1.4;}
-  .card .btn{font-size:18px; padding:14px 36px;}
-  .card .btn:active{box-shadow:0 3px 0 var(--gold-deep);}
-  .card .victim-btn:active{box-shadow:0 3px 0 #93a6d2,0 7px 14px rgba(0,0,0,.28);}
+  .mark{flex:1; width:100%; display:flex; align-items:center; justify-content:center;}
+  .mark svg{display:none; width:clamp(44px,32%,84px); height:auto;
+    filter:drop-shadow(0 4px 8px rgba(0,0,0,.25)); animation:pop .35s ease both;}
+  .board.is-right .mark .ok, .board.is-wrong .mark .no{display:block;}
+
+  /* ---------- confetti ---------- */
+  #confetti{position:fixed; inset:0; z-index:5; pointer-events:none; overflow:hidden;}
+  #confetti i{position:absolute; top:-12%; border-radius:2px; animation:fall linear forwards;}
+
+  @keyframes pop{from{opacity:0; transform:scale(.6);} to{opacity:1; transform:none;}}
+  @keyframes pulse{0%,100%{transform:scale(1);} 50%{transform:scale(1.04);}}
+  @keyframes beat{0%,100%{transform:scale(1);} 50%{transform:scale(1.18);}}
+  @keyframes bump{0%{transform:scale(1);} 45%{transform:scale(1.06);} 100%{transform:scale(1);}}
+  @keyframes shake{0%,100%{transform:none;} 20%,60%{transform:translateX(-6px);} 40%,80%{transform:translateX(6px);}}
+  @keyframes fall{0%{transform:translateY(0) rotate(0); opacity:1;} 100%{transform:translateY(118vh) rotate(620deg); opacity:.9;}}
+
+  @media (prefers-reduced-motion:reduce){
+    *,*:before,*:after{animation:none !important; transition:none !important;}
+    #confetti{display:none;}
+  }
 </style>
 </head>
 <body>
-  <div class="glow"></div>
-  <div class="ribbons" aria-hidden="true"></div>
-  <div class="host-sash" aria-hidden="true"></div>
-  <div class="pitch" aria-hidden="true">
-    <span style="left:8%;  width:46px; height:46px; animation-duration:18s; animation-delay:0s;"></span>
-    <span style="left:26%; width:28px; height:28px; animation-duration:24s; animation-delay:-6s;"></span>
-    <span style="left:44%; width:64px; height:64px; animation-duration:15s; animation-delay:-3s;"></span>
-    <span style="left:62%; width:40px; height:40px; animation-duration:21s; animation-delay:-9s;"></span>
-    <span style="left:78%; width:32px; height:32px; animation-duration:17s; animation-delay:-12s;"></span>
-    <span style="left:90%; width:54px; height:54px; animation-duration:26s; animation-delay:-4s;"></span>
-  </div>
+  <div class="app" id="app" data-state="ready">
+    <header class="masthead"><h1 class="sr">Kenchic: Myth or Fact</h1></header>
+    <p class="instr">TAP THE RIGHT CARD BEFORE TIME RUNS OUT</p>
 
-  <!-- START -->
-  <section id="start" class="screen">
-    <div class="wc26logo" id="wc26"></div>
-    <h1>WORD HUNT</h1>
-    <div class="tag">USA · 2026</div>
-    <p>Find the words. Beat the clock.</p>
-    <button class="btn" id="playBtn">PLAY</button>
-    <div class="sponsor">
-      <span class="label">POWERED BY</span>
-      <div class="mcbug"></div>
-    </div>
-  </section>
-
-  <!-- GAME -->
-  <section id="game" class="screen hidden">
-    <div class="phone">
-      <div class="gamebrand">
-        <div class="miniwc" id="miniWc"></div>
-        <div>
-          <h2>World Cup 2026</h2>
-          <span>USA · CANADA · MEXICO</span>
-        </div>
-        <div class="hostmarks" aria-hidden="true"><i></i><i></i><i></i></div>
-      </div>
-      <div class="gamebody">
-        <div class="hud">
-          <div class="count">Found <b id="count">0</b>/4</div>
-          <div class="timerwrap">
-            <div class="bar" id="bar"><i id="barFill"></i></div>
-            <div class="clock" id="clock">30</div>
+    <main class="play">
+      <div class="stage">
+        <div class="badge">
+          <div class="timer" id="timer" role="timer" aria-label="Seconds left">
+            <svg viewBox="0 0 48 48" aria-hidden="true">
+              <circle class="track" cx="24" cy="24" r="21"/><circle class="ring" id="ring" cx="24" cy="24" r="21"/>
+            </svg>
+            <b id="clock">10</b>
           </div>
+          <div class="verdict" id="verdict" role="status"></div>
         </div>
-        <div class="question" id="question"></div>
-        <div class="gridwrap"><div id="grid"></div></div>
-        <div class="result" id="result">
-          <span id="resultText">Time's up!</span>
-          <button class="btn btn-sm victim-btn" id="nextBtn">NEXT VICTIM</button>
-        </div>
+        <div class="qcard" id="qcard"><p class="statement" id="statement"></p></div>
+        <button class="btn" id="startBtn" type="button">START</button>
+        <button class="btn" id="nextBtn" type="button">NEXT PLAYER</button>
       </div>
-    </div>
-  </section>
 
-  <!-- MODAL -->
-  <section id="modal" class="screen hidden">
-    <div id="confetti"></div>
-    <div class="card">
-      <div class="winmark" id="mIcon"></div>
-      <h2 id="mTitle">SHARP FAN!</h2>
-      <button class="btn victim-btn" id="againBtn">NEXT VICTIM</button>
-      <div class="sponsor">
-        <span class="label" id="mSponsorLabel">GIFT COURTESY OF</span>
-        <div class="mcbug"></div>
+      <div class="boards">
+        <button class="board myth" id="mythBtn" type="button" data-pick="MYTH" aria-label="Myth" disabled>
+          <span class="label"><i></i></span>
+          <span class="mark" aria-hidden="true">
+            <svg class="ok" viewBox="0 0 48 48"><circle cx="24" cy="24" r="24" fill="#fff"/><path d="M14 25l7 7 13-15" fill="none" stroke="#1e9e4a" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <svg class="no" viewBox="0 0 48 48"><circle cx="24" cy="24" r="24" fill="#fff"/><path d="M16 16l16 16M32 16L16 32" stroke="#df3633" stroke-width="5" stroke-linecap="round"/></svg>
+          </span>
+        </button>
+        <button class="board fact" id="factBtn" type="button" data-pick="FACT" aria-label="Fact" disabled>
+          <span class="label"><i></i></span>
+          <span class="mark" aria-hidden="true">
+            <svg class="ok" viewBox="0 0 48 48"><circle cx="24" cy="24" r="24" fill="#fff"/><path d="M14 25l7 7 13-15" fill="none" stroke="#1e9e4a" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <svg class="no" viewBox="0 0 48 48"><circle cx="24" cy="24" r="24" fill="#fff"/><path d="M16 16l16 16M32 16L16 32" stroke="#df3633" stroke-width="5" stroke-linecap="round"/></svg>
+          </span>
+        </button>
       </div>
-    </div>
-  </section>
+    </main>
+  </div>
+  <div id="confetti" aria-hidden="true"></div>
 
 <script>
 (function(){
   "use strict";
 
   // ----- config -----
-  // Diverse World Cup categories — a random one is picked each round, and its
-  // answers are shuffled so the same category plays differently each time.
-  // 7x7 grid → answers are kept to 7 letters or fewer so they fit.
-  var CATEGORIES = [
-    // ---- the debates fans never settle ----
-    { q:"The GOAT debate",
-      words:["MESSI","RONALDO","PELE","MBAPPE","NEYMAR","HAALAND","ZIDANE","CRUYFF","KAKA","PUSKAS","EUSEBIO","MULLER","BEST"] },
-    { q:"Ballon d'Or royalty",
-      words:["MESSI","RONALDO","CRUYFF","PLATINI","KAKA","FIGO","OWEN","NEDVED","WEAH","ZIDANE","ROSSI","GULLIT","EUSEBIO","BEST","SAMMER"] },
-    { q:"The best No.10s ever",
-      words:["ZIDANE","PLATINI","BAGGIO","ZICO","TOTTI","RIVERA","HAGI","MESSI","PELE","KAKA"] },
-    { q:"They decided a World Cup final",
-      words:["GOTZE","INIESTA","MESSI","ZIDANE","RONALDO","KEMPES","ROSSI","PELE","ZAGALLO","VAVA"] },
-    { q:"Villains who broke our hearts",
-      words:["SUAREZ","ZIDANE","RIVALDO","HENRY","SIMEONE","BECKHAM","NEYMAR","ROBBEN","PEPE"] },
-    { q:"Golden Boot legends",
-      words:["RONALDO","MULLER","KLOSE","KEMPES","ROSSI","LINEKER","MBAPPE","SUKER","SALENKO","STABILE","KOCSIS"] },
-    { q:"Smashed the transfer record",
-      words:["NEYMAR","POGBA","RONALDO","BALE","FIGO","ZIDANE","SHEARER","CRESPO","VIERI","KAKA","BAGGIO","GULLIT","LENTINI"] },
-    { q:"Summer 2026 transfer headlines",
-      words:["EDERSON","GORDON","JACQUET","QUENDA","HOJLUND","OPENDA","MALEN","KOKCU","KIWIOR","WEAH"] },
-    { q:"Goalkeeping GOATs",
-      words:["YASHIN","BUFFON","BANKS","ZOFF","KAHN","NEUER","CECH","SEAMAN","SHILTON","DIDA"] },
-    { q:"Sweeper-keeper kings",
-      words:["NEUER","EDERSON","ALISSON","ONANA","SOMMER","RAYA","BRAVO","NAVAS","BURKI","VALDES"] },
-    { q:"Still chasing a first World Cup",
-      words:["MEXICO","BELGIUM","CROATIA","NIGERIA","POLAND","SWEDEN","GHANA","EGYPT","SENEGAL","MOROCCO","CHILE","HUNGARY","AUSTRIA","DENMARK"] },
-    // ---- World Cup heritage ----
-    { q:"Nations that have WON the World Cup",
-      words:["BRAZIL","ITALY","FRANCE","SPAIN","ENGLAND","URUGUAY","GERMANY"] },
-    { q:"Nations that have HOSTED a World Cup",
-      words:["QATAR","RUSSIA","BRAZIL","FRANCE","ITALY","SPAIN","MEXICO","CANADA","SWEDEN","CHILE","JAPAN","KOREA","GERMANY","URUGUAY","ENGLAND"] },
-    { q:"World Cup winning coaches",
-      words:["ZAGALLO","LIPPI","SCALONI","MENOTTI","BILARDO","RAMSEY","SCOLARI","BEARZOT","JACQUET","BOSQUE","POZZO","LOW"] },
-    { q:"Cities hosting the 2026 World Cup",
-      words:["ATLANTA","BOSTON","DALLAS","HOUSTON","MIAMI","SEATTLE","TORONTO","KANSAS"] }
+  // One statement per player, dealt at random. `a` is the right card.
+  var STATEMENTS = [
+    { s:"Chicken is only a source of protein.",                              a:"MYTH" },
+    { s:"All chicken has the same fat content.",                             a:"MYTH" },
+    { s:"You must eat chicken every day to get enough protein.",             a:"MYTH" },
+    { s:"Fried chicken has the same nutritional value as grilled chicken.",  a:"MYTH" },
+    { s:"Washing raw chicken makes it safer to eat.",                        a:"MYTH" },
+    { s:"Chicken is a good source of high-quality protein.",                 a:"FACT" },
+    { s:"Chicken can be part of a balanced diet.",                           a:"FACT" },
+    { s:"Chicken contains important B vitamins.",                            a:"FACT" },
+    { s:"Chicken protein helps with muscle repair and recovery.",             a:"FACT" },
+    { s:"Chicken can support an active lifestyle.",                          a:"FACT" }
   ];
-  var ROWS   = 7;        // grid rows
-  var COLS   = 7;        // grid columns  (7 x 7 — big, readable cells)
-  var ROUND_COUNT = 6;   // words hidden each round
-  var TARGET = 4;        // words needed to win (find any 4 of the 6)
-  var TIME   = 30;       // seconds
-
-  var DIRMAP = { H:[0,1], V:[1,0], UP:[-1,0], D1:[1,1] }; // right, down, up, diag-dr
-  var DIRKEYS = ["H","V","UP","D1"];
-  var DIRWEIGHT = ["H","H","H","V","V","D1","UP"]; // mostly forward, only a little reverse/up
+  var TIME = 10;                  // seconds per statement
+  var RING = 2 * Math.PI * 21;    // timer ring circumference (r=21 in the SVG)
 
   // ----- state -----
-  var grid, placed, found, timeLeft, ticker, cells;
-  var WORDS = [];        // the current round's hidden words
-  var CURRENT = null;    // the current round's category
-  var over = false;      // round finished (won or timed out)
+  var bag = [], current = null, deadline = 0, raf = 0;
 
   var $ = function(id){ return document.getElementById(id); };
+  var app = $("app"), mythBtn = $("mythBtn"), factBtn = $("factBtn");
 
   function rint(n){ return Math.floor(Math.random()*n); }
 
@@ -399,277 +246,85 @@
     return a;
   }
 
-  // a spread of directions so every round mixes horizontal / vertical / diagonal
-  function dirBag(n){
-    var bag = shuffle(DIRWEIGHT.slice());
-    while(bag.length < n){ bag = bag.concat(shuffle(DIRWEIGHT.slice())); }
-    return bag.slice(0, n);
-  }
-
-  // ---- pick a random category, scatter its answers across the grid ----
-  function buildGrid(){
-    for(var attempt=0; attempt<260; attempt++){
-      var allowOverlap = attempt > 70;      // stay non-overlapping unless packing is hard
-      var allowTouch = attempt > 120;       // keep words airy unless a round needs help
-      CURRENT = CATEGORIES[rint(CATEGORIES.length)];
-      grid = [];
-      for(var r=0;r<ROWS;r++){ grid.push(new Array(COLS).fill("")); }
-      placed = [];
-      var pool = shuffle(CURRENT.words.slice()).sort(function(a,b){ return a.length - b.length; });
-      var bag = dirBag(ROUND_COUNT);
-      for(var i=0; i<pool.length && placed.length<ROUND_COUNT; i++){
-        placeWord(pool[i], bag[placed.length], allowOverlap, allowTouch);
-      }
-      if(placed.length>=ROUND_COUNT){
-        WORDS = placed.map(function(p){ return p.word; });
-        fillBlanks();
-        return;
-      }
+  // Deal from a shuffled bag so no statement repeats until all of them have been
+  // played — and never the same one twice in a row across a reshuffle.
+  function deal(){
+    if(!bag.length){
+      bag = shuffle(STATEMENTS.slice());
+      if(bag[bag.length-1] === current){ bag.unshift(bag.pop()); }
     }
-    WORDS = placed.map(function(p){ return p.word; }); // unlikely fallback
-    fillBlanks();
+    return bag.pop();
   }
 
-  // place one word; prefer prefDir for variety, then fall back to other directions.
-  // strict mode keeps words separated so they read as scattered, while true
-  // crossovers are still allowed when the letters match.
-  function placeWord(word, prefDir, allowOverlap, allowTouch){
-    if(word.length > Math.max(ROWS,COLS)) return false;
-    var order = [prefDir];
-    shuffle(DIRKEYS.slice()).forEach(function(k){ if(k!==prefDir) order.push(k); });
-    for(var o=0; o<order.length; o++){
-      var d = DIRMAP[order[o]], dr=d[0], dc=d[1], len=word.length;
-      var best=null, bestScore=-1;
-      for(var tries=0; tries<60; tries++){
-        var r0 = rint(ROWS), c0 = rint(COLS);
-        var rEnd = r0 + dr*(len-1), cEnd = c0 + dc*(len-1);
-        if(rEnd<0||rEnd>=ROWS||cEnd<0||cEnd>=COLS) continue;
-        var fits=true, path=[];
-        for(var i=0;i<len;i++){
-          var rr=r0+dr*i, cc=c0+dc*i, ch=grid[rr][cc];
-          if(ch!==""){ if(!allowOverlap || ch!==word[i]){ fits=false; break; } }
-          path.push([rr,cc]);
-        }
-        if(fits && !allowTouch && touchesWord(path)){ fits=false; }
-        if(!fits) continue;
-        // among valid spots in this direction, keep the one farthest from
-        // already-placed words so answers spread out instead of clustering.
-        var sc = spreadScore(path);
-        if(sc > bestScore){ bestScore = sc; best = path; }
-      }
-      if(best){
-        for(var j=0;j<best.length;j++){ grid[best[j][0]][best[j][1]] = word[j]; }
-        placed.push({word:word, cells:best});
-        return true;
-      }
-    }
-    return false;
-  }
+  function setState(s){ app.setAttribute("data-state", s); }
 
-  // distance from a candidate word's centroid to the nearest already-placed
-  // word — higher = more spread out. The first word gets a random anchor.
-  function spreadScore(path){
-    if(placed.length===0) return rint(1000);
-    var cr=0, cc=0, i;
-    for(i=0;i<path.length;i++){ cr+=path[i][0]; cc+=path[i][1]; }
-    cr/=path.length; cc/=path.length;
-    var minD=Infinity;
-    for(var k=0;k<placed.length;k++){
-      var pc=placed[k].cells, pr=0, pcc=0, j;
-      for(j=0;j<pc.length;j++){ pr+=pc[j][0]; pcc+=pc[j][1]; }
-      pr/=pc.length; pcc/=pc.length;
-      var dd=(cr-pr)*(cr-pr)+(cc-pcc)*(cc-pcc);
-      if(dd<minD) minD=dd;
-    }
-    return minD;
-  }
-
-  function touchesWord(path){
-    var onPath = {};
-    path.forEach(function(rc){ onPath[rc[0]+","+rc[1]] = true; });
-    for(var i=0;i<path.length;i++){
-      var r=path[i][0], c=path[i][1];
-      if(grid[r][c] !== "") continue; // an intentional crossover
-      for(var dr=-1; dr<=1; dr++) for(var dc=-1; dc<=1; dc++){
-        if(dr===0 && dc===0) continue;
-        var rr=r+dr, cc=c+dc;
-        if(rr<0||rr>=ROWS||cc<0||cc>=COLS) continue;
-        if(onPath[rr+","+cc]) continue;
-        if(grid[rr][cc] !== "") return true;
-      }
-    }
-    return false;
-  }
-
-  function fillBlanks(){
-    var A="ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    for(var r=0;r<ROWS;r++) for(var c=0;c<COLS;c++){
-      if(grid[r][c]==="") grid[r][c]=A[rint(26)];
-    }
-  }
-
-  // ---- render ----
-  function render(){
-    $("question").innerHTML =
-      '<span class="q-kicker">FIND '+TARGET+' WORDS</span>' +
-      '<span class="q-main">'+CURRENT.q+'</span>';
-    var g = $("grid");
-    g.style.gridTemplateColumns = "repeat("+COLS+",minmax(0,1fr))";
-    g.style.gridTemplateRows = "repeat("+ROWS+",minmax(0,1fr))";
-    g.style.gridAutoRows = "minmax(0,1fr)";
-    g.style.aspectRatio = COLS+"/"+ROWS;
-    g.style.width = "";
-    g.style.height = "";
-    g.innerHTML="";
-    cells=[];
-    for(var r=0;r<ROWS;r++){
-      cells.push([]);
-      for(var c=0;c<COLS;c++){
-        var d=document.createElement("div");
-        d.className="cell";
-        d.textContent=grid[r][c];
-        d.dataset.r=r; d.dataset.c=c;
-        g.appendChild(d);
-        cells[r].push(d);
-      }
-    }
-  }
-
-  function syncGridSize(){
-    var wrap = document.querySelector(".gridwrap"), g = $("grid");
-    if(!wrap || !g) return;
-    var rect = wrap.getBoundingClientRect();
-    var size = Math.floor(Math.min(rect.width, rect.height));
-    if(!isFinite(size) || size < 1) return;
-    g.style.width = size+"px";
-    g.style.height = size+"px";
-
-    var cs = window.getComputedStyle ? window.getComputedStyle(g) : null;
-    var colGap = cs ? (parseFloat(cs.columnGap) || parseFloat(cs.gap) || 0) : 0;
-    var rowGap = cs ? (parseFloat(cs.rowGap) || parseFloat(cs.gap) || 0) : colGap;
-    var padX = cs ? ((parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0)) : 0;
-    var padY = cs ? ((parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0)) : 0;
-    var cellW = (size - padX - colGap*(COLS-1)) / COLS;
-    var cellH = (size - padY - rowGap*(ROWS-1)) / ROWS;
-    var cellSize = Math.max(1, Math.min(cellW, cellH));
-    g.style.setProperty("--cell-font", Math.max(13, Math.min(40, Math.round(cellSize*.54)))+"px");
-  }
-
-  function queueGridSync(){
-    if(window.requestAnimationFrame){ requestAnimationFrame(syncGridSize); }
-    else { setTimeout(syncGridSize, 0); }
-  }
-
-  // ---- selection (pointer drag) ----
-  var selecting=false, startCell=null, selPath=[];
-
-  function cellFromPoint(x,y){
-    var el=document.elementFromPoint(x,y);
-    if(el && el.classList.contains("cell")) return el;
-    return null;
-  }
-
-  // snap the drag to the nearest straight line (horizontal / vertical / diagonal)
-  // so the highlight always follows the finger, even when it drifts off-axis.
-  function lineBetween(a,b){
-    var r1=+a.dataset.r,c1=+a.dataset.c,r2=+b.dataset.r,c2=+b.dataset.c;
-    var dr=r2-r1, dc=c2-c1;
-    if(dr===0 && dc===0) return [a];
-    var sr=Math.sign(dr), sc=Math.sign(dc), adr=Math.abs(dr), adc=Math.abs(dc);
-    var stepR, stepC, len;
-    if(adc >= adr*2){ stepR=0;  stepC=sc; len=adc+1; }          // horizontal
-    else if(adr >= adc*2){ stepR=sr; stepC=0;  len=adr+1; }     // vertical
-    else { stepR=sr; stepC=sc; len=Math.max(adr,adc)+1; }       // diagonal
-    var out=[];
-    for(var i=0;i<len;i++){
-      var rr=r1+stepR*i, cc=c1+stepC*i;
-      if(rr<0||rr>=ROWS||cc<0||cc>=COLS) break;
-      out.push(cells[rr][cc]);
-    }
-    return out;
-  }
-
-  function clearSel(){
-    selPath.forEach(function(c){ if(!c.classList.contains("found")) c.classList.remove("sel"); });
-    selPath=[];
-  }
-  function paintSel(path){
-    clearSel();
-    selPath=path;
-    path.forEach(function(c){ if(!c.classList.contains("found")) c.classList.add("sel"); });
-  }
-
-  function onDown(e){
-    if(over || found.size>=TARGET) return;
-    var p = e.touches?e.touches[0]:e;
-    var cell=cellFromPoint(p.clientX,p.clientY);
-    if(!cell) return;
-    if(e.pointerId!==undefined && e.currentTarget && e.currentTarget.setPointerCapture){
-      try{ e.currentTarget.setPointerCapture(e.pointerId); }catch(_){}
-    }
-    selecting=true; startCell=cell;
-    paintSel([cell]);
-    e.preventDefault();
-  }
-  function onMove(e){
-    if(!selecting) return;
-    var p = e.touches?e.touches[0]:e;
-    var cell=cellFromPoint(p.clientX,p.clientY);
-    if(!cell) return;
-    var line=lineBetween(startCell,cell);
-    if(line) paintSel(line);
-    e.preventDefault();
-  }
-  function onUp(){
-    if(!selecting) return;
-    selecting=false;
-    checkSelection();
-    clearSel();
-    startCell=null;
-  }
-
-  function checkSelection(){
-    if(selPath.length<2) return;
-    var str=selPath.map(function(c){return c.textContent;}).join("");
-    var rev=str.split("").reverse().join("");
-    for(var i=0;i<WORDS.length;i++){
-      var w=WORDS[i];
-      if((str===w||rev===w) && !found.has(w)){ markFound(w, selPath); return; }
-    }
-  }
-
-  function markFound(word, path){
-    found.add(word);
-    path.forEach(function(c){
-      c.style.animationDelay="0ms";
-      c.classList.remove("sel"); c.classList.add("found");
+  function resetBoards(enabled){
+    [mythBtn, factBtn].forEach(function(b){
+      b.classList.remove("is-right","is-wrong","is-dim");
+      b.disabled = !enabled;
     });
-    $("count").textContent=found.size;
-    if(found.size>=TARGET){ win(); }
   }
 
-  // ---- timer ----
-  function startTimer(){
-    timeLeft=TIME;
-    updateClock();
-    ticker=setInterval(function(){
-      timeLeft--;
-      updateClock();
-      if(timeLeft<=0){ clearInterval(ticker); if(found.size<TARGET) lose(); }
-    },1000);
+  // ---- flow ----
+  function start(){
+    current = deal();
+    $("statement").textContent = current.s;
+    resetBoards(true);
+    setState("question");
+    var q = $("qcard");
+    q.classList.remove("pop"); void q.offsetWidth; q.classList.add("pop"); // replay the pop
+    deadline = performance.now() + TIME*1000;
+    tick();
   }
-  function updateClock(){
-    $("clock").textContent=timeLeft;
-    var pct=Math.max(0,timeLeft/TIME)*100;
-    $("barFill").style.width=pct+"%";
-    $("bar").classList.toggle("low", timeLeft<=10);
+
+  // Driven off a deadline (not a counter) so it can't drift, and a backgrounded tab
+  // comes back to the right answer: time's up.
+  function tick(){
+    var left = Math.max(0, deadline - performance.now());
+    var secs = Math.ceil(left/1000);
+    $("clock").textContent = secs;
+    $("ring").style.strokeDashoffset = RING * (1 - left/(TIME*1000));
+    $("timer").classList.toggle("low", secs <= 3);
+    if(left <= 0){ finish(null); return; }
+    raf = requestAnimationFrame(tick);
+  }
+
+  // pick: "MYTH" | "FACT" | null (time ran out)
+  function finish(pick){
+    cancelAnimationFrame(raf);
+    mythBtn.disabled = factBtn.disabled = true;
+    var kind, head;
+    if(pick === null){
+      mythBtn.classList.add("is-dim"); factBtn.classList.add("is-dim");
+      kind = "timeout"; head = "TIME'S UP!";
+    } else {
+      var right = pick === current.a;
+      var chosen = pick === "MYTH" ? mythBtn : factBtn;
+      chosen.classList.add(right ? "is-right" : "is-wrong");
+      (chosen === mythBtn ? factBtn : mythBtn).classList.add("is-dim");
+      kind = right ? "right" : "wrong"; head = right ? "CORRECT!" : "WRONG!";
+      if(right) confetti(true);
+    }
+    var v = $("verdict"), b = document.createElement("b");
+    b.textContent = head;
+    v.className = "verdict " + kind;
+    v.textContent = "";
+    v.appendChild(b);
+    v.appendChild(document.createTextNode(" It's a " + current.a));
+    setState("done");
+  }
+
+  function nextPlayer(){
+    confetti(false);
+    resetBoards(false);
+    setState("ready");
   }
 
   // ---- confetti ----
   function confetti(on){
     var c=$("confetti"); c.innerHTML="";
     if(!on) return;
-    var cols=["#f5c84e","#ffffff","#2a63d6","#19c37d","#ff6b6b","#ffe08a"];
+    var cols=["#df3633","#ffffff","#e3a20b","#1e9e4a","#2a63d6"];
     for(var i=0;i<52;i++){
       var p=document.createElement("i");
       var size=6+rint(8);
@@ -683,187 +338,14 @@
     }
   }
 
-  // ---- flow ----
-  function startGame(){
-    confetti(false);
-    clearInterval(ticker);
-    over=false;
-    $("result").classList.remove("show");
-    found=new Set();
-    $("count").textContent="0";
-    buildGrid();
-    render();
-    show("game");
-    syncGridSize();
-    queueGridSync();
-    setTimeout(syncGridSize, 80);
-    startTimer();
-  }
-
-  function win(){
-    over=true;
-    clearInterval(ticker);
-    $("mTitle").textContent="SHARP FAN!";
-    $("mSponsorLabel").textContent="GIFT COURTESY OF";
-    show("modal");
-    confetti(true);
-  }
-
-  // timeout: reveal the answers they missed in red, right on the grid
-  function lose(){
-    over=true;
-    placed.forEach(function(p){
-      if(found.has(p.word)) return;
-      p.cells.forEach(function(rc){
-        var cell=cells[rc[0]][rc[1]];
-        if(cell.classList.contains("found")) return;
-        cell.style.animationDelay="0ms";
-        cell.classList.add("miss");
-      });
-    });
-    $("resultText").textContent="Time's up — the answers are in red.";
-    $("result").classList.add("show");
-  }
-
-  function show(which){
-    ["start","game","modal"].forEach(function(id){
-      $(id).classList.toggle("hidden", id!==which);
-    });
-  }
-
-  // ---- MultiChoice sponsor logo (inline SVG: gold sunburst fan + wordmark) ----
-  function buildLogo(){
-    var COLORS=["#3d2b90","#3959b8","#f00583","#e91623","#ff6b00","#ffae18",
-                "#13a747","#00a99d","#00a7c8"];
-    var petals="";
-    for(var i=0;i<COLORS.length;i++){
-      var x1 = 48 + i*16;
-      petals += '<path d="M 120 42 L '+x1+' 16 L '+(x1+28)+' 20 Z" fill="'+COLORS[i]+'" opacity=".98"/>';
-    }
-    return '<svg viewBox="0 0 240 98" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="MultiChoice, a CANAL+ company">'
-      + '<g>'+petals+'</g><path d="M 74 48 H 166" stroke="#111" stroke-width="2" opacity=".12"/>'
-      + '<text x="120" y="74" text-anchor="middle" font-family="Georgia,\'Times New Roman\',serif" '
-      +   'font-weight="800" font-size="26" letter-spacing="0.3" fill="#0b0b0b">MultiChoice</text>'
-      + '<text x="120" y="90" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" '
-      +   'font-weight="900" font-size="10" letter-spacing="2.8" fill="#0b0b0b">A CANAL+ COMPANY</text>'
-      + '</svg>';
-  }
-  // ---- FIFA World Cup 26 mark (SVG recreation: bold "26" + gold trophy) ----
-  function goldDefs(id){
-    return '<defs><linearGradient id="'+id+'" x1="0" y1="0" x2="0" y2="1">'
-      + '<stop offset="0" stop-color="#ffe7a0"/><stop offset="0.5" stop-color="#f5c84e"/>'
-      + '<stop offset="1" stop-color="#c8902a"/></linearGradient></defs>';
-  }
-  function trophyPaths(grad){
-    return '<rect x="-27" y="108" width="54" height="9" rx="3" fill="#0b6b3a"/>'
-      + '<rect x="-21" y="98" width="42" height="12" rx="2" fill="#0b6b3a"/>'
-      + '<path d="M -16,98 C -25,70 -15,54 -10,45 L 10,45 C 15,54 25,70 16,98 Z" fill="url(#'+grad+')"/>'
-      + '<circle cx="0" cy="33" r="22" fill="url(#'+grad+')"/>'
-      + '<circle cx="0" cy="33" r="21" fill="none" stroke="#b9831f" stroke-width="1.5" opacity=".55"/>'
-      + '<path d="M -8,30 C -3,40 3,40 8,30" fill="none" stroke="#b9831f" stroke-width="1.4" opacity=".5"/>'
-      + '<path d="M -13,58 C -3,65 6,78 12,94" fill="none" stroke="#fff5be" stroke-width="2" opacity=".42"/>';
-  }
-  function buildWC26(){
-    return '<svg viewBox="0 0 632 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="FIFA World Cup 2026">'
-      + goldDefs("wcg")
-      + '<rect width="632" height="360" fill="#224aa5"/>'
-      + '<rect width="632" height="360" fill="url(#wcBg)"/>'
-      + '<defs><radialGradient id="wcBg" cx="50%" cy="17%" r="68%"><stop offset="0" stop-color="#315dc0"/><stop offset="1" stop-color="#07318e"/></radialGradient></defs>'
-      + '<g transform="translate(129,69)">'
-      + '<path d="M 5 9 C 91 35 153 35 238 6 L 367 11 L 367 188 L 3 188 Z" fill="#123fa3"/>'
-      + '<path d="M 3 126 C 75 160 139 169 210 145 C 282 120 331 133 373 188 H 3 Z" fill="#e21222"/>'
-      + '<path d="M 272 0 H 331 L 319 75 L 372 91 V 188 C 323 126 282 88 272 0 Z" fill="#07864e"/>'
-      + '<path d="M 3 10 L 126 39 C 176 50 239 43 367 1 V 63 C 276 91 172 92 3 54 Z" fill="#174bb2" opacity=".85"/>'
-      + '<path d="M 29 53 C 33 23 53 5 97 5 H 127 C 169 6 194 21 198 58 L 155 64 C 151 45 142 35 124 35 H 107 C 88 35 78 45 75 62 Z" fill="#fff"/>'
-      + '<path d="M 45 149 C 70 119 104 91 132 69 C 154 52 155 35 131 35 H 111 C 92 35 81 44 76 62 H 30 C 34 23 55 5 100 5 H 136 C 194 6 220 46 195 87 C 184 105 165 121 139 144 H 206 V 188 H 45 Z" fill="#fff"/>'
-      + '<path d="M 259 70 C 275 54 296 47 320 50 C 354 54 375 78 375 116 C 375 164 341 192 290 192 C 236 192 205 160 205 101 C 205 39 240 5 295 5 H 327 C 359 5 383 20 391 51 L 344 57 C 338 43 326 36 309 35 H 295 C 273 35 261 47 259 70 Z M 292 86 C 269 86 255 101 255 124 C 255 147 270 161 292 161 C 315 161 330 147 330 124 C 330 101 315 86 292 86 Z" fill="#fff"/>'
-      + '<g transform="translate(188,-2) scale(1.05)">' + trophyPaths("wcg") + '</g>'
-      + '<rect x="28" y="170" width="319" height="33" rx="13" fill="#052b8b"/>'
-      + '<text x="188" y="196" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="900" font-size="24" letter-spacing="19" fill="#fff">2026</text>'
-      + '</g>'
-      + '<text x="316" y="302" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="900" font-size="22" letter-spacing="15" fill="#fff">FIFA WORLD CUP</text>'
-      + '</svg>';
-  }
-  function buildMiniWC(){
-    return '<svg viewBox="0 0 140 90" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="World Cup 2026">'
-      + goldDefs("minig")
-      + '<rect x="12" y="6" width="116" height="57" fill="#123fa3"/>'
-      + '<path d="M 12 43 C 35 54 55 57 78 48 C 101 40 116 44 128 63 H 12 Z" fill="#e21222"/>'
-      + '<path d="M 97 6 H 116 L 112 29 L 128 35 V 63 C 112 43 100 31 97 6 Z" fill="#07864e"/>'
-      + '<path d="M 12 8 L 51 17 C 70 21 91 18 128 6 V 25 C 94 35 61 35 12 24 Z" fill="#174bb2" opacity=".85"/>'
-      + '<text x="43" y="58" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="67" fill="#fff">2</text>'
-      + '<text x="98" y="58" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="67" fill="#fff">6</text>'
-      + '<g transform="translate(70,-19) scale(.5)">' + trophyPaths("minig") + '</g>'
-      + '<rect x="23" y="57" width="94" height="12" rx="5" fill="#052b8b"/>'
-      + '<text x="70" y="67" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="900" font-size="8" letter-spacing="5" fill="#fff">2026</text>'
-      + '<text x="70" y="84" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="900" font-size="8" letter-spacing="2" fill="#fff">WORLD CUP</text>'
-      + '</svg>';
-  }
-  function buildTrophy(){
-    return '<svg viewBox="-30 10 60 112" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Trophy">'
-      + goldDefs("tg") + '<g>' + trophyPaths("tg") + '</g></svg>';
-  }
-
-  function injectArt(){
-    var bugs = document.querySelectorAll(".mcbug");
-    for(var i=0;i<bugs.length;i++){
-      bugs[i].innerHTML = '<img decoding="async" src="assets/multichoice-logo.webp" alt="MultiChoice, a CANAL+ company">';
-    }
-    $("wc26").innerHTML = '<img decoding="async" src="assets/worldcup-blue-banner.webp" alt="FIFA World Cup 2026">';
-    $("miniWc").innerHTML = '<img decoding="async" src="assets/worldcup-26-color.webp" alt="FIFA World Cup 2026">';
-    $("mIcon").innerHTML = '<img decoding="async" src="assets/worldcup-host-trophy.webp" alt="FIFA World Cup 2026">';
-  }
-  injectArt();
-
-  // Force every embedded image to decode immediately at load (off-screen screens
-  // included) so pressing PLAY never reveals a half-decoded background or logo.
-  (function warmDecode(){
-    var imgs = document.querySelectorAll("#wc26 img,#miniWc img,#mIcon img,.mcbug img");
-    for(var i=0;i<imgs.length;i++){
-      var im=imgs[i];
-      if(im && typeof im.decode==="function"){ im.decode().catch(function(){}); }
-    }
-  })();
-
   // ---- wire up ----
-  $("playBtn").addEventListener("click", startGame);
-  $("againBtn").addEventListener("click", startGame);
-  $("nextBtn").addEventListener("click", startGame);
-
-  var g=$("grid");
-  if(window.PointerEvent){
-    g.addEventListener("pointerdown", onDown);
-    g.addEventListener("pointermove", onMove);
-    window.addEventListener("pointerup", onUp);
-    window.addEventListener("pointercancel", onUp);
-  } else {
-    g.addEventListener("touchstart", onDown, {passive:false});
-    g.addEventListener("touchmove", onMove, {passive:false});
-    window.addEventListener("touchend", onUp);
-    window.addEventListener("touchcancel", onUp);
-    g.addEventListener("mousedown", onDown);
-    g.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", onUp);
-  }
-  window.addEventListener("resize", queueGridSync);
-  window.addEventListener("orientationchange", function(){
-    queueGridSync();
-    setTimeout(syncGridSize, 220);
+  $("startBtn").addEventListener("click", start);
+  $("nextBtn").addEventListener("click", nextPlayer);
+  [mythBtn, factBtn].forEach(function(b){
+    b.addEventListener("click", function(){
+      if(app.getAttribute("data-state") === "question") finish(b.getAttribute("data-pick"));
+    });
   });
-  if(window.visualViewport){
-    window.visualViewport.addEventListener("resize", queueGridSync);
-  }
-  // Re-fit the board whenever its box actually changes size: the big inline
-  // images finishing decode, web-font swap, fullscreen, the result bar toggling.
-  // This is what kills the "it stretches for a beat each time it loads".
-  if(window.ResizeObserver){
-    try{
-      var __gw = document.querySelector(".gridwrap");
-      if(__gw){ new ResizeObserver(queueGridSync).observe(__gw); }
-    }catch(e){}
-  }
-  window.addEventListener("load", queueGridSync);
-  if(document.fonts && document.fonts.ready){ document.fonts.ready.then(queueGridSync); }
 })();
 </script>
 </body>

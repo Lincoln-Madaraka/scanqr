@@ -1,0 +1,53 @@
+# scanthisqr — make the World Cup word hunt load fast on weak connections.
+# Apache / cPanel (Red Giant). Harmlessly ignored by nginx. Deploys via the
+# README rsync (it is not in the --exclude list).
+
+# ----------------------------------------------------------------------------
+# 1) Compression — shrink text payloads on the wire.
+#    The HTML (~41 KB) drops to ~10 KB gzipped / smaller with brotli, so the
+#    page arrives in roughly one packet even on a poor mobile link.
+#    (WebP/PNG/JPEG are already compressed and are left alone.)
+# ----------------------------------------------------------------------------
+<IfModule mod_brotli.c>
+  AddOutputFilterByType BROTLI_COMPRESS text/html text/css text/plain text/xml \
+    application/javascript application/json image/svg+xml
+</IfModule>
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css text/plain text/xml \
+    application/javascript application/json image/svg+xml
+</IfModule>
+
+# ----------------------------------------------------------------------------
+# 2) Caching — repeat visitors should re-download nothing but a tiny revalidation.
+# ----------------------------------------------------------------------------
+<IfModule mod_headers.c>
+  # HTML: revalidate every load so a redeploy shows up immediately, but a 304
+  # lets the browser reuse its cached copy instead of re-downloading.
+  <FilesMatch "\.html$">
+    Header set Cache-Control "no-cache, must-revalidate"
+  </FilesMatch>
+  # Static assets rarely change (and carry ?v= when they do) → cache for a year.
+  <FilesMatch "\.(webp|png|jpe?g|gif|svg|ico|css|js|woff2?)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+</IfModule>
+
+# mod_expires fallback for hosts without mod_headers.
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType text/html              "access plus 0 seconds"
+  ExpiresByType image/webp             "access plus 1 year"
+  ExpiresByType image/png              "access plus 1 year"
+  ExpiresByType image/jpeg             "access plus 1 year"
+  ExpiresByType image/x-icon           "access plus 1 year"
+  ExpiresByType image/svg+xml          "access plus 1 year"
+  ExpiresByType text/css               "access plus 1 year"
+  ExpiresByType application/javascript "access plus 1 year"
+</IfModule>
+
+# ----------------------------------------------------------------------------
+# 3) Make sure WebP is served with the right MIME type on older Apache builds.
+# ----------------------------------------------------------------------------
+<IfModule mod_mime.c>
+  AddType image/webp .webp
+</IfModule>
