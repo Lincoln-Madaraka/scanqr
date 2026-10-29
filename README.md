@@ -10,7 +10,9 @@ page update
 
 | Path | What it is |
 |---|---|
-| `index.html` | — **World Cup 26 · Word Hunt** game (self-contained, inline styles). Served at the root domain. |
+| `index.html` | — **Kenchic · Myth or Fact** game (self-contained, inline styles). Served at the root domain. One statement per player, 10-second timer, tap MYTH or FACT. Statements live in the `STATEMENTS` list in the script. |
+| `word-hunt.html` | — **World Cup 26 · Word Hunt** game (the previous landing page). Reachable at `/word-hunt.html`. |
+| `assets/myth-or-fact/` | Myth or Fact art, cut from the board mockup by `source/build_myth_or_fact.py` (source: `source/myth-or-fact-board.jpg`). |
 | `menu.html` | The Match Day Special menu — a single `<picture>` element pointing at the menu artwork. Reachable at `/menu.html`. |
 | `styles.css` | ~30 lines used by `menu.html`. Flex-centers the image, full-width on phones, capped at 720 px with a soft shadow on larger screens. |
 | `manifest.webmanifest` | PWA manifest — "Add to Home Screen" installs as *Match Day*. |

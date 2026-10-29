@@ -37,7 +37,6 @@
        logo/title and the pattern below always line up at every screen size. */
     --tw:min(84vw,420px);
     --bw:calc(var(--tw) * 1.968);   /* 1600px board / 813px title */
-    --top:12px;
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
   html,body{margin:0;}
@@ -55,12 +54,12 @@
     width:100%; max-width:620px; min-height:100vh; min-height:100svh; margin:0 auto;
     padding:0 clamp(14px,4vw,24px) calc(16px + env(safe-area-inset-bottom));
     background:
-      url("assets/myth-or-fact/header.webp?v=1") center var(--top) / var(--bw) auto no-repeat,
-      url("assets/myth-or-fact/pattern.webp?v=1") center calc(var(--top) + var(--bw) * .34125) / var(--bw) auto repeat-y,
+      url("assets/myth-or-fact/header.webp?v=1") center top / var(--bw) auto no-repeat,
+      url("assets/myth-or-fact/pattern.webp?v=1") center calc(var(--bw) * .36125) / var(--bw) auto repeat-y, /* 578/1600 */
       var(--navy);
   }
   @media (min-width:700px){ .app{box-shadow:0 0 60px rgba(0,0,0,.35);} }
-  .masthead{flex:0 0 auto; height:calc(var(--top) + var(--bw) * .2125);} /* down to the title baseline */
+  .masthead{flex:0 0 auto; height:calc(var(--bw) * .2325);} /* down to the title baseline */
   .instr{margin:clamp(8px,1.6svh,16px) 0 0; text-align:center; font-family:"Questrial",sans-serif;
     font-size:calc(var(--tw) * .042); letter-spacing:.02em;}
 
@@ -128,13 +127,13 @@
     width:100%; aspect-ratio:635/694; max-height:32svh; min-height:130px;
     border-radius:clamp(16px,5vw,30px);
     background:var(--card); box-shadow:0 10px 24px rgba(0,0,0,.3);
-    transition:background-color .25s ease, opacity .25s ease, transform .15s ease;
+    transition:background-color .25s ease, filter .25s ease, transform .15s ease;
   }
   .board.myth{--card:var(--yellow); --label:#fff;}
   .board.fact{--card:#fff; --label:var(--red);}
   .board.is-right{--card:var(--green); --label:#fff; animation:bump .4s ease;}
   .board.is-wrong{--card:var(--red); --label:#fff; animation:shake .4s ease;}
-  .board.is-dim{opacity:.45;}
+  .board.is-dim{filter:saturate(.2) brightness(.6);} /* stays opaque so the pattern doesn't show through */
   .board:disabled{cursor:default;}
   .board:not(:disabled):active{transform:scale(.97);}
   .board:focus-visible{outline:3px solid #fff; outline-offset:3px;}
@@ -164,6 +163,18 @@
   @keyframes bump{0%{transform:scale(1);} 45%{transform:scale(1.06);} 100%{transform:scale(1);}}
   @keyframes shake{0%,100%{transform:none;} 20%,60%{transform:translateX(-6px);} 40%,80%{transform:translateX(6px);}}
   @keyframes fall{0%{transform:translateY(0) rotate(0); opacity:1;} 100%{transform:translateY(118vh) rotate(620deg); opacity:.9;}}
+
+  /* short phones (small Androids, browser bars showing): tighten so it all fits */
+  @media (max-height:620px){
+    .stage{min-height:0;}
+    .badge, .timer{height:44px;}
+    .timer{width:44px;}
+    .timer b{font-size:19px;}
+    .verdict{height:38px;}
+    .btn{padding:11px 32px; font-size:18px;}
+    #startBtn{padding:14px 44px; font-size:22px;}
+    .board{min-height:110px;}
+  }
 
   @media (prefers-reduced-motion:reduce){
     *,*:before,*:after{animation:none !important; transition:none !important;}

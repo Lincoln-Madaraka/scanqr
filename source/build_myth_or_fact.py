@@ -5,7 +5,8 @@ branding stays exactly as designed:
 
 - header.webp   the top band of the board: pattern + Kenchic logo + MYTH OR FACT title
                 (the "pick a card and stick it..." line is painted out — the page sets
-                its own instruction in HTML)
+                its own instruction in HTML). 1600 x 578: 32px top pad + 546px band.
+                index.html's background maths (.36125, .2325) depend on these sizes.
 - pattern.webp  the same band with logo/title painted out, stacked with a mirrored copy
                 so it tiles seamlessly below the header
 - myth-label.png / fact-label.png
@@ -129,8 +130,13 @@ def save_webp(arr, name, **kw):
 keep = dilate(logo | title, 2)
 keep_soft = blur(keep.astype(np.float32), 0.8)[..., None]
 t_top = inpaint(t, dilate(instr, 3) | keep)  # pattern continues under the kept art's halo
-header = render(t_top) * (1 - keep_soft) + band * keep_soft
-save_webp(header, "header.webp", quality=88)
+pattern_top = render(t_top)
+header = pattern_top * (1 - keep_soft) + band * keep_soft
+# Breathing room above the logo: a mirrored copy of the band's own top rows (pattern
+# only, logo painted out), so it joins seamlessly — the pattern tile can't do this, as
+# its logo area is re-patterned.
+TOP_PAD = 32
+save_webp(np.vstack([pattern_top[:TOP_PAD][::-1], header]), "header.webp", quality=88)
 
 # ---- pattern.webp: band with everything painted out, mirrored so it tiles ----
 # Order is [flipped, normal]: the first row under the header must match the header's
